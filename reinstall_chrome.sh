@@ -64,14 +64,26 @@ check_error "Falha ao dar permissão de execução ao Chromedriver"
 # Limpar arquivos temporários
 rm -rf chromedriver-linux64.zip /tmp/chromedriver-linux64
 
-# 7. Verificar versões instaladas
+# 7. Verificar e instalar Selenium e Webdriver Manager
+echo "Verificando se o Selenium está instalado..."
+if pip3 show selenium &>/dev/null; then
+    echo "Selenium já está instalado."
+else
+    echo "Instalando Selenium e Webdriver Manager..."
+    sudo pip3 install --break-system-packages --no-cache-dir selenium webdriver-manager
+    check_error "Falha ao instalar Selenium e Webdriver Manager"
+fi
+
+# 8. Verificar versões instaladas
 echo "Verificando versões instaladas:"
 CHROME_INSTALLED=$(google-chrome-stable --version)
 CHROMEDRIVER_INSTALLED=$(chromedriver --version)
+SELENIUM_INSTALLED=$(pip3 show selenium | grep "^Version:" | awk '{print $2}')
 echo "Google Chrome Stable: $CHROME_INSTALLED"
 echo "Chromedriver: $CHROMEDRIVER_INSTALLED"
+echo "Selenium: $SELENIUM_INSTALLED"
 
-# 8. Testar compatibilidade básica
+# 9. Testar compatibilidade básica
 echo "Testando compatibilidade..."
 if chromedriver --version &>/dev/null && google-chrome-stable --version &>/dev/null; then
     # Verificar se as versões principais coincidem
