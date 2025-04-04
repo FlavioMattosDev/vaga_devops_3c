@@ -12,12 +12,23 @@ echo "Iniciando o processo de atualização do Chrome e Chromedriver (versão es
 
 # 1. Remover todas as variantes do Google Chrome existentes
 echo "Removendo todas as variantes do Google Chrome existentes..."
-# Tentar remover pacotes via apt, mas não falhar se não existirem
-sudo apt-get remove --purge google-chrome-stable google-chrome-beta google-chrome-unstable -y &>/dev/null || true
+
+# Tentar identificar e remover pacotes instalados via dpkg
+echo "Procurando e removendo pacotes do Chrome instalados via dpkg..."
+CHROME_PACKAGES=$(dpkg -l | grep -E 'google-chrome|chromium' | awk '{print $2}' || true)
+if [ -n "$CHROME_PACKAGES" ]; then
+    echo "Pacotes encontrados: $CHROME_PACKAGES"
+    sudo apt-get remove --purge -y $CHROME_PACKAGES &>/dev/null
+    check_error "Falha ao remover pacotes do Chrome via apt-get"
+else
+    echo "Nenhum pacote do Chrome encontrado via dpkg."
+fi
+
+# Remover arquivos manuais (incluindo Chrome for Testing)
 echo "Removendo arquivos manuais do Google Chrome (incluindo Chrome for Testing)..."
-sudo rm -rf /usr/lib/google-chrome /usr/lib/chromium-browser /opt/google/chrome-for-testing /usr/bin/google-chrome
+sudo rm -rf /usr/lib/google-chrome /usr/lib/chromium-browser /opt/google/chrome* /usr/bin/google-chrome* /usr/bin/chromium*
 check_error "Falha ao remover diretórios do Google Chrome"
-sudo rm -rf ~/.config/google-chrome ~/.cache/google-chrome
+sudo rm -rf ~/.config/google-chrome ~/.cache/google-chrome ~/.config/chromium
 check_error "Falha ao remover configurações do Chrome"
 
 # 2. Remover Chromedriver existente
@@ -46,10 +57,7 @@ echo "Versão do Chrome Stable instalada: $CHROME_VERSION"
 
 # 6. Baixar e instalar Chromedriver compatível
 echo "Baixando Chromedriver compatível com a versão estável..."
-# Usar o repositório chrome-for-testing-public para o Chromedriver
 DRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip"
-
-# Baixar o Chromedriver diretamente com a versão exata do Chrome
 wget -q "$DRIVER_URL" -O chromedriver-linux64.zip
 check_error "Falha ao baixar o Chromedriver (versão $CHROME_VERSION). Verifique conexão ou se a versão existe no repositório."
 
