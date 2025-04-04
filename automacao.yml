@@ -1,0 +1,29 @@
+---
+- name: Run Selenium Docker Container
+  hosts: localhost
+  become: yes
+
+  tasks:
+    - name: Fazer pull da imagem flaviomattos/selenium-docker sem verificação de TLS
+      ansible.builtin.command: podman pull docker.io/flaviomattos/selenium-docker --tls-verify=false
+      register: pull_output
+      changed_when: "'Downloaded newer image' in pull_output.stdout"
+
+    - name: Exibir saída do pull
+      ansible.builtin.debug:
+        msg: "{{ pull_output.stdout }}"
+
+
+    - name: Executar o container Selenium
+      community.docker.docker_container:
+        name: selenium_container
+        image: flaviomattos/selenium-docker
+        state: started
+        restart_policy: always
+        detach: false
+        command: ["python3", "selenium_script.py"]
+      register: selenium_output
+
+    - name: Exibir saída do script Selenium
+      ansible.builtin.debug:
+        msg: "{{ selenium_output.container.Output }}"
